@@ -11,9 +11,11 @@ import com.melody.bean.MapBlockItem;
 import com.melody.io.Output;
 import com.melody.io.RandomFileInput;
 import com.melody.makepatch.bean.BlockNodeValue;
+import com.melody.util.ExecTimeUtil;
 import com.melody.util.Util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,17 +57,23 @@ public class Main1 {
 
 
         byte[] sourceBytes;
-        RandomFileInput input;
-        try {
-            sourceBytes = Files.readAllBytes(sourceFile.toPath());
-//            InputStream inputStream = new FileInputStream(targetFile);
-//            input = new Input(inputStream);
 
-            input = new RandomFileInput(targetFile, "r");
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        sourceBytes=  ExecTimeUtil.exec2(() -> {
+            try {
+                return Files.readAllBytes(sourceFile.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        RandomFileInput input = ExecTimeUtil.exec2(()->{
+            try {
+                return new RandomFileInput(targetFile, "r");
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
 
         RBTree<BlockNodeValue> sourceBlockTree = generateTree(sourceBytes);
