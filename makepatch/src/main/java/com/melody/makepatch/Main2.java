@@ -2,14 +2,12 @@ package com.melody.makepatch;
 
 import com.melody.JettLog;
 import com.melody.algorithm.bintree.RBTree;
-import com.melody.algorithm.bintree.RBTreeNode;
-import com.melody.algorithm.search.ForceSearch;
-import com.melody.algorithm.search.IByteSearch;
 import com.melody.bean.BlockItem;
 import com.melody.bean.ByteBlockItem;
 import com.melody.bean.MapBlockItem;
 import com.melody.io.Output;
 import com.melody.io.RandomFileInput;
+import com.melody.makepatch.bean.BlockMapKey;
 import com.melody.makepatch.bean.BlockNodeValue;
 import com.melody.util.ExecUtil;
 import com.melody.util.Util;
@@ -20,8 +18,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
 
-public class Main1 {
+public class Main2 {
 
     final static int COMPARE_SIZE_MIN = 16;
 
@@ -76,9 +75,10 @@ public class Main1 {
         });
 
 
-        RBTree<BlockNodeValue> sourceBlockTree = generateTree(sourceBytes);
+//        RBTree<BlockNodeValue> sourceBlockTree = ExecUtil.exec2(()-> generateTree(sourceBytes));
 
         byte[] readbuffer = new byte[COMPARE_SIZE_MIN];
+        HashMap<BlockMapKey, Integer> sourceBlockMap = generateMap(sourceBytes);
 
 
         ByteBlockItem byteBlockItem = new ByteBlockItem();
@@ -112,20 +112,26 @@ public class Main1 {
                     readbuffer = Arrays.copyOfRange(readbuffer, 0, readSize);
                 }
 
-                long crc32 = Util.getCRC32Checksum(readbuffer, 0, readSize);
-                BlockNodeValue tempValue = new BlockNodeValue(0, 0, crc32);
-                BlockNodeValue retValue = sourceBlockTree.find(tempValue);
-//                int matchStart = search.search(sourceBytes, readbuffer);
-                int matchStart = retValue!=null? retValue.getPosition():-1;
-
-
+                int matchStart = -1;
                 boolean isMatch = false;
-                if (matchStart >= 0)
-                {
-                    byte[] compareBytes = Arrays.copyOfRange(sourceBytes, retValue.getPosition(), retValue.getPosition()+retValue.getLength());
-                    isMatch = Arrays.equals(readbuffer, compareBytes);
-                }
 
+
+                int hashcode = Arrays.hashCode(readbuffer);
+                BlockMapKey key = new BlockMapKey(0, readSize, hashcode);
+
+                while (!isMatch)
+                {
+
+                    Object startObj = sourceBlockMap.get(key);
+                    if (startObj == null)
+                    {
+                        break;
+                    }
+                    matchStart = (int)startObj;
+                    byte[] compareBytes = Arrays.copyOfRange(sourceBytes, matchStart, matchStart+key.getLength());
+                    isMatch = Arrays.equals(readbuffer, compareBytes);
+                    key.setIndex(key.getIndex()+1);
+                }
 
                 if (isMatch)
                 {
@@ -210,6 +216,41 @@ public class Main1 {
         }
 
         return sourceBlockTree;
+    }
+
+
+
+    /**
+     * 获取map
+     * @param sourceBytes
+     */
+    private static HashMap<BlockMapKey, Integer> generateMap(byte[] sourceBytes)
+    {
+        /**
+         * 用存存储相同的hashcode的块有多少个
+         */
+        int blockSize = sourceBytes.length/COMPARE_SIZE_MIN + 1;
+        HashMap<Integer, Integer> blockNumMap = new HashMap<>(blockSize);
+        HashMap<BlockMapKey, Integer> blockMap = new HashMap<>(blockSize);
+
+        int readPosition = 0;
+        long sourceLength = sourceBytes.length;
+        while (readPosition < sourceLength)
+        {
+            long remain = sourceLength - readPosition;
+            int rsize = remain > COMPARE_SIZE_MIN? COMPARE_SIZE_MIN:(int)remain;
+
+            int hashcode = Arrays.hashCode(Arrays.copyOfRange(sourceBytes, readPosition, readPosition+rsize));
+            Object indexObj = blockNumMap.get(hashcode);
+            int index = indexObj!=null? (int)indexObj :0;
+            blockNumMap.put(hashcode, index+1);
+
+            BlockMapKey value = new BlockMapKey(index, rsize, hashcode);
+            blockMap.put(value, readPosition);
+
+            readPosition += rsize;
+        }
+        return blockMap;
     }
 
     /**

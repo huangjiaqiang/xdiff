@@ -5,6 +5,7 @@ package makepatch;
 
 import com.melody.makepatch.Main;
 import com.melody.makepatch.Main1;
+import com.melody.makepatch.Main2;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -21,6 +22,17 @@ public class AppTest {
 //        args[1] = "../assets/source";
 //        args[2] = "../assets/target";
         Main1.main(args);
+    }
+
+    @Test public void makepatch2() {
+        String[] args = new String[3];
+//        args[1] = "../assets/pdf/source.pdf";
+//        args[2] = "../assets/pdf/target.pdf";
+        args[1] = "../assets/source.apk";
+        args[2] = "../assets/target.apk";
+//        args[1] = "../assets/source";
+//        args[2] = "../assets/target";
+        Main2.main(args);
     }
 
     @Test public void makepatchOld() {

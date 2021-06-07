@@ -3,7 +3,7 @@ package com.melody.util;
 /**
  * 用于计算代码执行时长工具
  */
-public class ExecTimeUtil {
+public class ExecUtil {
 
     public interface CodeExecution<I,O>{
         O exec(I i);
@@ -45,10 +45,10 @@ public class ExecTimeUtil {
     public static  void exec(CodeExecutionNoReturn codeBlock)
     {
         // 开始时间
-        long stime = System.currentTimeMillis();
+        long stime = System.nanoTime();
         codeBlock.exec();
         // 结束时间
-        long etime = System.currentTimeMillis();
+        long etime = System.nanoTime();
         // 计算执行时间
         System.out.printf("consume time: %d.\n", (etime - stime));
     }
