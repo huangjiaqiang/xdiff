@@ -9,6 +9,7 @@ import com.melody.io.Output;
 import com.melody.io.RandomFileInput;
 import com.melody.makepatch.bean.BlockMapKey;
 import com.melody.makepatch.bean.BlockNodeValue;
+import com.melody.util.DiagnoseTool;
 import com.melody.util.ExecUtil;
 import com.melody.util.Util;
 
@@ -69,13 +70,11 @@ public class Main2 {
         RandomFileInput input = ExecUtil.exec2(()->{
             try {
                 return new RandomFileInput(targetFile, "r");
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
 
-
-//        RBTree<BlockNodeValue> sourceBlockTree = ExecUtil.exec2(()-> generateTree(sourceBytes));
 
         byte[] readbuffer = new byte[COMPARE_SIZE_MIN];
         HashMap<BlockMapKey, Integer> sourceBlockMap = generateMap(sourceBytes);
@@ -85,6 +84,13 @@ public class Main2 {
 
         MapBlockItem mapBlockItem = new MapBlockItem(sourceBytes);
 
+        DiagnoseTool diagnoseTool = DiagnoseTool.obtain("1");
+
+
+        /**
+         * BlockItem数量　
+         */
+        int blockItemCount = 0;
 
         long targetFileLength = targetFile.length();
 
@@ -147,11 +153,7 @@ public class Main2 {
 //                    JettLog.d("same byte", ""+mapBlockItem.getSize()+" position:"+(input.getPosition() - mapBlockItem.getSize())+" start:"+matchStart);
                 }else
                 {
-                    try {
-                        input.seek(input.getPosition() - readSize + 1);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    input.skip( - readSize + 1);
 
                     //没有找到相同的块,一步一步向前推进
                     byteBlockItem.append(readbuffer[0]);
@@ -168,13 +170,18 @@ public class Main2 {
                 //找到相同块，先把byteBlockItem存储下来
                 if (byteBlockItem.getSize() > 0)
                 {
+                    diagnoseTool.writeBlock(byteBlockItem.getSize());
+
                     output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
                     output.writeLong(byteBlockItem.getSize(), true);
                     output.writeBytes(byteBlockItem.getOutput());
+                    byteBlockItem.reset();
                 }
-                byteBlockItem.reset();
+
 
                 //记录相同模块映射
+                diagnoseTool.writeBlock(mapBlockItem.getSize());
+
                 output.writeInt(BlockItem.BLOCK_TYPE_MAP, true);
                 output.writeLong(mapBlockItem.getStart(), true);
                 output.writeLong(mapBlockItem.getSize(), true);
@@ -182,8 +189,12 @@ public class Main2 {
             }
         }
 
+
+
         if (byteBlockItem.getSize() > 0)
         {
+            diagnoseTool.writeBlock(byteBlockItem.getSize());
+
             output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
             output.writeLong(byteBlockItem.getSize(), true);
             output.writeBytes(byteBlockItem.getOutput());
@@ -191,6 +202,7 @@ public class Main2 {
         }
 
         output.flush();
+        diagnoseTool.flush();
 
     }
 
@@ -298,11 +310,7 @@ public class Main2 {
             {
                 //回退到不相同的点
                 if (readSize > 0) {
-                    try {
-                        input.seek(input.getPosition() - readSize);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    input.skip(-readSize);
                 }
 
                 return sameSize;

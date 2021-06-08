@@ -70,7 +70,7 @@ public class Main1 {
         RandomFileInput input = ExecUtil.exec2(()->{
             try {
                 return new RandomFileInput(targetFile, "r");
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -141,11 +141,7 @@ public class Main1 {
 //                    JettLog.d("same byte", ""+mapBlockItem.getSize()+" position:"+(input.getPosition() - mapBlockItem.getSize())+" start:"+matchStart);
                 }else
                 {
-                    try {
-                        input.seek(input.getPosition() - readSize + 1);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    input.skip(- readSize + 1);
 
                     //没有找到相同的块,一步一步向前推进
                     byteBlockItem.append(readbuffer[0]);
@@ -257,11 +253,7 @@ public class Main1 {
             {
                 //回退到不相同的点
                 if (readSize > 0) {
-                    try {
-                        input.seek(input.getPosition() - readSize);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    input.skip(-readSize);
                 }
 
                 return sameSize;

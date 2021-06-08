@@ -62,6 +62,8 @@ public class Main {
             throw new RuntimeException(e);
         }
 
+        int blockNum = 0;
+
         while (true)
         {
             try {
@@ -86,9 +88,12 @@ public class Main {
                 long blockSize = input.readLong(true);
                 outputBytes = Arrays.copyOfRange(sourceBytes, (int)start, (int)(blockSize+start));
             }
+            blockNum++;
 
             output.write(outputBytes);
         }
+
+        System.out.println("block nums:"+blockNum);
 
         output.flush();
 
