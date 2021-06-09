@@ -102,6 +102,11 @@ public class Main2 {
 //                JettLog.d("position", "" + input.getPosition());
             }
 
+//            if (diagnoseTool.getTotalSize() != input.getPosition())
+//            {
+//                System.out.println("");
+//            }
+
             try {
                 readSize = input.read(readbuffer);
             } catch (IOException e) {
@@ -150,13 +155,27 @@ public class Main2 {
                     int matchSize = exactMatch(sourceBytes, start, input);
                     mapBlockItem.setStart(matchStart);
                     mapBlockItem.setSize(matchSize+patLengh);
+//                    diagnoseTool.writeBlock(matchSize+patLengh);
+//                    if (diagnoseTool.getTotalSize() != input.getPosition())
+//                    {
+//                        System.out.println("");
+//                    }
 //                    JettLog.d("same byte", ""+mapBlockItem.getSize()+" position:"+(input.getPosition() - mapBlockItem.getSize())+" start:"+matchStart);
                 }else
                 {
+//                    if (input.getPosition() > 4096)
+//                    {
+//                        System.out.println("");
+//                    }
                     input.skip( - readSize + 1);
 
                     //没有找到相同的块,一步一步向前推进
                     byteBlockItem.append(readbuffer[0]);
+//                    diagnoseTool.writeBlock(1);
+//                    if (diagnoseTool.getTotalSize() != input.getPosition())
+//                    {
+//                        System.out.println("");
+//                    }
 //                readPisition = readPisition - ( readSize - 1);
                     //没有找到相同的块, 向前推进readbuffer的长度
 //                byteBlockItem.append(readbuffer);
@@ -170,7 +189,7 @@ public class Main2 {
                 //找到相同块，先把byteBlockItem存储下来
                 if (byteBlockItem.getSize() > 0)
                 {
-                    diagnoseTool.writeBlock(byteBlockItem.getSize());
+//                    diagnoseTool.writeBlock(byteBlockItem.getSize());
 
                     output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
                     output.writeLong(byteBlockItem.getSize(), true);
@@ -180,7 +199,8 @@ public class Main2 {
 
 
                 //记录相同模块映射
-                diagnoseTool.writeBlock(mapBlockItem.getSize());
+//                diagnoseTool.writeBlock(mapBlockItem.getSize());
+
 
                 output.writeInt(BlockItem.BLOCK_TYPE_MAP, true);
                 output.writeLong(mapBlockItem.getStart(), true);

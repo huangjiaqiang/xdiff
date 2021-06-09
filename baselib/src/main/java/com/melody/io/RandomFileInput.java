@@ -109,7 +109,7 @@ public class RandomFileInput extends RandomAccessFile {
 
         int read(byte[] bytes, int offset , int length)
         {
-            int readSize = -1;
+            int readSize = 0;
             int available = available();
             if (available >= length)
             {

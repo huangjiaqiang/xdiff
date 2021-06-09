@@ -20,6 +20,9 @@ public class DiagnoseTool
     {}
 
     long totalSize = 0;
+    public long getTotalSize(){
+        return totalSize;
+    }
 
     public static DiagnoseTool obtain(String name){
         DiagnoseTool tool = new DiagnoseTool();
