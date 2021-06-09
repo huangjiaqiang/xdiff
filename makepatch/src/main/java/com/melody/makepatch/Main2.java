@@ -87,7 +87,7 @@ public class Main2 {
         DiagnoseTool diagnoseTool = DiagnoseTool.obtain("1");
 
 
-        /**
+        /*
          * BlockItem数量　
          */
         int blockItemCount = 0;
@@ -97,15 +97,6 @@ public class Main2 {
         while (input.getPosition() < targetFileLength) {
 
             int readSize = 0;
-
-            if (input.getPosition() % 1024 == 0) {
-//                JettLog.d("position", "" + input.getPosition());
-            }
-
-//            if (diagnoseTool.getTotalSize() != input.getPosition())
-//            {
-//                System.out.println("");
-//            }
 
             try {
                 readSize = input.read(readbuffer);
@@ -155,31 +146,12 @@ public class Main2 {
                     int matchSize = exactMatch(sourceBytes, start, input);
                     mapBlockItem.setStart(matchStart);
                     mapBlockItem.setSize(matchSize+patLengh);
-//                    diagnoseTool.writeBlock(matchSize+patLengh);
-//                    if (diagnoseTool.getTotalSize() != input.getPosition())
-//                    {
-//                        System.out.println("");
-//                    }
 //                    JettLog.d("same byte", ""+mapBlockItem.getSize()+" position:"+(input.getPosition() - mapBlockItem.getSize())+" start:"+matchStart);
                 }else
                 {
-//                    if (input.getPosition() > 4096)
-//                    {
-//                        System.out.println("");
-//                    }
                     input.skip( - readSize + 1);
-
                     //没有找到相同的块,一步一步向前推进
                     byteBlockItem.append(readbuffer[0]);
-//                    diagnoseTool.writeBlock(1);
-//                    if (diagnoseTool.getTotalSize() != input.getPosition())
-//                    {
-//                        System.out.println("");
-//                    }
-//                readPisition = readPisition - ( readSize - 1);
-                    //没有找到相同的块, 向前推进readbuffer的长度
-//                byteBlockItem.append(readbuffer);
-//                readPisition = readPisition - ( readSize - 1);
                 }
             }
 
@@ -222,8 +194,7 @@ public class Main2 {
         }
 
         output.flush();
-        diagnoseTool.flush();
-
+//        diagnoseTool.flush();
     }
 
     /**

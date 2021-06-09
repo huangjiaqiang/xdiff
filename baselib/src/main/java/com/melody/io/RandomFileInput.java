@@ -158,11 +158,9 @@ public class RandomFileInput extends RandomAccessFile {
                 }
             }
 
-            position += readSize;
-
             if (readSize == b.length)
             {
-                return readSize;
+                break;
             }
 
             if (readSize < b.length)
@@ -170,30 +168,31 @@ public class RandomFileInput extends RandomAccessFile {
                 if (available() > 0)
                 {
                     //缓存已经读完，需要读取文件
-                    Buffer temp = buffer;
-                    buffer = preBuffer;
-                    preBuffer = temp;
-
+                    if (buffer.length > 0) {
+                        //buffer 有内容才将置为prebuffer
+                        Buffer temp = buffer;
+                        buffer = preBuffer;
+                        preBuffer = temp;
+                    }else
+                    {
+//                        System.out.print("do nothing");
+                    }
                     buffer.reset();
                     int size = super.read(buffer.bytes);
                     if (size < 0)
                     {
-                        throw new RuntimeException("never happen");
+                        //read end
+                        break;
                     }
                     buffer.length = size;
                 }
-                else
-                {
-                    //文件读取结束
-                    if (readSize > 0)
-                    {
-                        return readSize;
-                    }else
-                    {
-                        return -1;
-                    }
-                }
             }
+        }
+
+        if (readSize > 0)
+        {
+            position+=readSize;
+            return readSize;
         }
 
         return -1;
