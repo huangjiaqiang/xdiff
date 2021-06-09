@@ -30,5 +30,5 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClassName = "com.melody.Main"
+    mainClassName = "com.melody.makepatch.Main2"
 }

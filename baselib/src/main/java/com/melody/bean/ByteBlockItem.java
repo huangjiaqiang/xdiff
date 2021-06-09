@@ -65,8 +65,8 @@ public class ByteBlockItem extends BlockItem{
     }
 
     @Override
-    public byte[] getOutput() {
-        return Arrays.copyOfRange(this.bytes, 0, size);
+    public byte[] getBytes() {
+        return this.bytes;
     }
 
     @Override

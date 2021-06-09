@@ -1,10 +1,6 @@
 package com.melody.makepatch;
 
-import com.melody.JettLog;
 import com.melody.algorithm.bintree.RBTree;
-import com.melody.algorithm.bintree.RBTreeNode;
-import com.melody.algorithm.search.ForceSearch;
-import com.melody.algorithm.search.IByteSearch;
 import com.melody.bean.BlockItem;
 import com.melody.bean.ByteBlockItem;
 import com.melody.bean.MapBlockItem;
@@ -15,7 +11,6 @@ import com.melody.util.ExecUtil;
 import com.melody.util.Util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -83,7 +78,7 @@ public class Main1 {
 
         ByteBlockItem byteBlockItem = new ByteBlockItem();
 
-        MapBlockItem mapBlockItem = new MapBlockItem(sourceBytes);
+        MapBlockItem mapBlockItem = new MapBlockItem();
 
 
         long targetFileLength = targetFile.length();
@@ -160,7 +155,7 @@ public class Main1 {
                 {
                     output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
                     output.writeLong(byteBlockItem.getSize(), true);
-                    output.writeBytes(byteBlockItem.getOutput());
+                    output.writeBytes(byteBlockItem.getBytes());
                 }
                 byteBlockItem.reset();
 
@@ -176,7 +171,7 @@ public class Main1 {
         {
             output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
             output.writeLong(byteBlockItem.getSize(), true);
-            output.writeBytes(byteBlockItem.getOutput());
+            output.writeBytes(byteBlockItem.getBytes());
             byteBlockItem.reset();
         }
 

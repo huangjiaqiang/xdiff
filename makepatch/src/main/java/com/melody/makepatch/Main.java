@@ -6,14 +6,12 @@ import com.melody.algorithm.search.IByteSearch;
 import com.melody.bean.BlockItem;
 import com.melody.bean.ByteBlockItem;
 import com.melody.bean.MapBlockItem;
-import com.melody.io.Input;
 import com.melody.io.Output;
 import com.melody.io.RandomFileInput;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.RandomAccess;
 
 public class Main {
 
@@ -70,7 +68,7 @@ public class Main {
 
         ByteBlockItem byteBlockItem = new ByteBlockItem();
 
-        MapBlockItem mapBlockItem = new MapBlockItem(sourceBytes);
+        MapBlockItem mapBlockItem = new MapBlockItem();
 
         //搜索引擎
         IByteSearch search = new ForceSearch();
@@ -135,7 +133,7 @@ public class Main {
                 {
                     output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
                     output.writeLong(byteBlockItem.getSize(), true);
-                    output.writeBytes(byteBlockItem.getOutput());
+                    output.writeBytes(byteBlockItem.getBytes(), 0, (int)byteBlockItem.getSize());
                 }
                 byteBlockItem.reset();
 
@@ -151,7 +149,7 @@ public class Main {
         {
             output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
             output.writeLong(byteBlockItem.getSize(), true);
-            output.writeBytes(byteBlockItem.getOutput());
+            output.writeBytes(byteBlockItem.getBytes(), 0, (int)byteBlockItem.getSize());
             byteBlockItem.reset();
         }
 

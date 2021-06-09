@@ -11,12 +11,6 @@ public class MapBlockItem extends BlockItem{
     //映射开始位置
     private int start = 0;
 
-    private byte[] sourceFileBytes = null;
-
-    public MapBlockItem(byte[] sourceFileBytes) {
-        this.sourceFileBytes = sourceFileBytes;
-    }
-
     private int size = 0;
 
     public void setStart(int start) {
@@ -37,8 +31,8 @@ public class MapBlockItem extends BlockItem{
     }
 
     @Override
-    public byte[] getOutput() {
-        return Arrays.copyOfRange(this.sourceFileBytes, start, size);
+    public byte[] getBytes() {
+        throw new RuntimeException("not need");
     }
 
     @Override

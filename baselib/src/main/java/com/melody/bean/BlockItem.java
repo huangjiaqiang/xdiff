@@ -11,7 +11,7 @@ public abstract class BlockItem {
     //字节码内容
     private byte[] bytes;
     abstract public long getSize();
-    abstract public byte[] getOutput();
+    abstract public byte[] getBytes();
 
     abstract public void reset();
 

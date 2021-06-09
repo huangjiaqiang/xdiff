@@ -1,6 +1,5 @@
 package com.melody.makepatch;
 
-import com.melody.JettLog;
 import com.melody.algorithm.bintree.RBTree;
 import com.melody.bean.BlockItem;
 import com.melody.bean.ByteBlockItem;
@@ -13,11 +12,7 @@ import com.melody.util.DiagnoseTool;
 import com.melody.util.ExecUtil;
 import com.melody.util.Util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -36,6 +31,12 @@ public class Main2 {
         String source = args[1];
         String target = args[2];
         File sourceFile = new File(source);
+        RandomAccessFile sourceInput = null;
+        try {
+            sourceInput = new RandomAccessFile(sourceFile, "r");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         File targetFile = new File(target);
         if (!sourceFile.exists())
         {
@@ -56,16 +57,16 @@ public class Main2 {
         }
 
 
-        byte[] sourceBytes;
+//        byte[] sourceBytes;
 
 
-        sourceBytes=  ExecUtil.exec2(() -> {
-            try {
-                return Files.readAllBytes(sourceFile.toPath());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+//        sourceBytes=  ExecUtil.exec2(() -> {
+//            try {
+//                return Files.readAllBytes(sourceFile.toPath());
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
 
         RandomFileInput input = ExecUtil.exec2(()->{
             try {
@@ -77,12 +78,25 @@ public class Main2 {
 
 
         byte[] readbuffer = new byte[COMPARE_SIZE_MIN];
-        HashMap<BlockMapKey, Integer> sourceBlockMap = generateMap(sourceBytes);
 
+        RandomAccessFile finalSourceInput = sourceInput;
+        HashMap<BlockMapKey, Integer> sourceBlockMap = ExecUtil.exec2(()->{
+            try {
+                return generateMap(finalSourceInput);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            sourceInput.seek(0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         ByteBlockItem byteBlockItem = new ByteBlockItem();
 
-        MapBlockItem mapBlockItem = new MapBlockItem(sourceBytes);
+        MapBlockItem mapBlockItem = new MapBlockItem();
 
         DiagnoseTool diagnoseTool = DiagnoseTool.obtain("1");
 
@@ -130,7 +144,23 @@ public class Main2 {
                         break;
                     }
                     matchStart = (int)startObj;
-                    byte[] compareBytes = Arrays.copyOfRange(sourceBytes, matchStart, matchStart+key.getLength());
+
+                    try {
+                        sourceInput.seek(matchStart);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    byte[] compareBytes = new byte[key.getLength()];
+                    int ret = 0;
+                    try {
+                        ret = sourceInput.read(compareBytes, 0, key.getLength());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (ret != key.getLength())
+                    {
+                        throw new RuntimeException("never happen!!");
+                    }
                     isMatch = Arrays.equals(readbuffer, compareBytes);
                     key.setIndex(key.getIndex()+1);
                 }
@@ -143,7 +173,12 @@ public class Main2 {
                     int start = matchStart+patLengh;
 
                     //找到部分相同后进行精确匹配
-                    int matchSize = exactMatch(sourceBytes, start, input);
+                    int matchSize = 0;
+                    try {
+                        matchSize = exactMatch(sourceInput, start, input);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     mapBlockItem.setStart(matchStart);
                     mapBlockItem.setSize(matchSize+patLengh);
 //                    JettLog.d("same byte", ""+mapBlockItem.getSize()+" position:"+(input.getPosition() - mapBlockItem.getSize())+" start:"+matchStart);
@@ -165,7 +200,7 @@ public class Main2 {
 
                     output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
                     output.writeLong(byteBlockItem.getSize(), true);
-                    output.writeBytes(byteBlockItem.getOutput());
+                    output.writeBytes(byteBlockItem.getBytes(), 0, (int)byteBlockItem.getSize());
                     byteBlockItem.reset();
                 }
 
@@ -189,7 +224,7 @@ public class Main2 {
 
             output.writeInt(BlockItem.BLOCK_TYPE_BYTE, true);
             output.writeLong(byteBlockItem.getSize(), true);
-            output.writeBytes(byteBlockItem.getOutput());
+            output.writeBytes(byteBlockItem.getBytes(), 0, (int)byteBlockItem.getSize());
             byteBlockItem.reset();
         }
 
@@ -225,57 +260,63 @@ public class Main2 {
 
     /**
      * 获取map
-     * @param sourceBytes
+     * @param sourceInput
      */
-    private static HashMap<BlockMapKey, Integer> generateMap(byte[] sourceBytes)
-    {
+    private static HashMap<BlockMapKey, Integer> generateMap(RandomAccessFile sourceInput) throws IOException {
         /**
          * 用存存储相同的hashcode的块有多少个
          */
-        int blockSize = sourceBytes.length/COMPARE_SIZE_MIN + 1;
+        long inputLength = sourceInput.length();
+        int blockSize = (int)(inputLength/COMPARE_SIZE_MIN + 1);
         HashMap<Integer, Integer> blockNumMap = new HashMap<>(blockSize);
         HashMap<BlockMapKey, Integer> blockMap = new HashMap<>(blockSize);
 
         int readPosition = 0;
-        long sourceLength = sourceBytes.length;
-        while (readPosition < sourceLength)
+        byte[] buffer = new byte[COMPARE_SIZE_MIN];
+        while (readPosition < inputLength)
         {
-            long remain = sourceLength - readPosition;
-            int rsize = remain > COMPARE_SIZE_MIN? COMPARE_SIZE_MIN:(int)remain;
+            long remain = inputLength - readPosition;
+            int readSize = remain > COMPARE_SIZE_MIN? COMPARE_SIZE_MIN:(int)remain;
 
-            int hashcode = Arrays.hashCode(Arrays.copyOfRange(sourceBytes, readPosition, readPosition+rsize));
+            sourceInput.read(buffer);
+            int hashcode = Arrays.hashCode(Arrays.copyOfRange(buffer, 0, readSize));
             Object indexObj = blockNumMap.get(hashcode);
             int index = indexObj!=null? (int)indexObj :0;
             blockNumMap.put(hashcode, index+1);
 
-            BlockMapKey value = new BlockMapKey(index, rsize, hashcode);
+            BlockMapKey value = new BlockMapKey(index, readSize, hashcode);
             blockMap.put(value, readPosition);
 
-            readPosition += rsize;
+            readPosition += readSize;
         }
         return blockMap;
     }
 
     /**
      * 执行完全匹配，返回匹配的长度是多少
-     * @param source
+     * @param sourceInput
      * @param sourceStart
      * @param input
      * @return
      */
-    private static int exactMatch(byte[] source, int sourceStart, RandomFileInput input)
-    {
+    private static int exactMatch(final RandomAccessFile sourceInput, int sourceStart, RandomFileInput input) throws IOException {
         int readSize = 0;
         int sameSize = 0;
         int offStart = 0;
         byte[] readbuffer = new byte[COMPARE_SIZE_MIN];
 
-        for (int i = sourceStart; i < source.length; i ++)
+        long sourceLength = sourceInput.length();
+
+        byte[] sourceBuffer = new byte[COMPARE_SIZE_MIN];
+
+        for (int i = sourceStart; i < sourceLength; i ++)
         {
             if (readSize <= 0)
             {
                 try {
                     readSize = input.read(readbuffer);
+                    sourceInput.read(sourceBuffer);
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -292,7 +333,8 @@ public class Main2 {
 
 
             //byte比对
-            if (readbuffer[offStart++] == source[i]) {
+            if (readbuffer[offStart] == sourceBuffer[offStart]) {
+                offStart++;
 
                 sameSize++;
                 readSize--;
