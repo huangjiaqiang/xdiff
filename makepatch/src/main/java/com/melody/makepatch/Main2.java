@@ -4,6 +4,7 @@ import com.melody.algorithm.bintree.RBTree;
 import com.melody.bean.BlockItem;
 import com.melody.bean.ByteBlockItem;
 import com.melody.bean.MapBlockItem;
+import com.melody.io.MappedByteInput;
 import com.melody.io.Output;
 import com.melody.io.RandomFileInput;
 import com.melody.makepatch.bean.BlockMapKey;
@@ -31,10 +32,10 @@ public class Main2 {
         String source = args[1];
         String target = args[2];
         File sourceFile = new File(source);
-        RandomAccessFile sourceInput = null;
+        MappedByteInput sourceInput = null;
         try {
-            sourceInput = new RandomAccessFile(sourceFile, "r");
-        } catch (FileNotFoundException e) {
+            sourceInput = new MappedByteInput(sourceFile.getAbsolutePath());
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         File targetFile = new File(target);
@@ -79,7 +80,7 @@ public class Main2 {
 
         byte[] readbuffer = new byte[COMPARE_SIZE_MIN];
 
-        RandomAccessFile finalSourceInput = sourceInput;
+        MappedByteInput finalSourceInput = sourceInput;
         HashMap<BlockMapKey, Integer> sourceBlockMap = ExecUtil.exec2(()->{
             try {
                 return generateMap(finalSourceInput);
@@ -88,11 +89,8 @@ public class Main2 {
             }
         });
 
-        try {
-            sourceInput.seek(0);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        System.out.println("memory total use:"+Runtime.getRuntime().totalMemory());
+        sourceInput.seek(0);
 
         ByteBlockItem byteBlockItem = new ByteBlockItem();
 
@@ -145,22 +143,10 @@ public class Main2 {
                     }
                     matchStart = (int)startObj;
 
-                    try {
-                        sourceInput.seek(matchStart);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    sourceInput.seek(matchStart);
+
                     byte[] compareBytes = new byte[key.getLength()];
-                    int ret = 0;
-                    try {
-                        ret = sourceInput.read(compareBytes, 0, key.getLength());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if (ret != key.getLength())
-                    {
-                        throw new RuntimeException("never happen!!");
-                    }
+                    sourceInput.read(compareBytes);
                     isMatch = Arrays.equals(readbuffer, compareBytes);
                     key.setIndex(key.getIndex()+1);
                 }
@@ -262,7 +248,7 @@ public class Main2 {
      * 获取map
      * @param sourceInput
      */
-    private static HashMap<BlockMapKey, Integer> generateMap(RandomAccessFile sourceInput) throws IOException {
+    private static HashMap<BlockMapKey, Integer> generateMap(MappedByteInput sourceInput) throws IOException {
         /**
          * 用存存储相同的hashcode的块有多少个
          */
@@ -279,6 +265,7 @@ public class Main2 {
             int readSize = remain > COMPARE_SIZE_MIN? COMPARE_SIZE_MIN:(int)remain;
 
             sourceInput.read(buffer);
+
             int hashcode = Arrays.hashCode(Arrays.copyOfRange(buffer, 0, readSize));
             Object indexObj = blockNumMap.get(hashcode);
             int index = indexObj!=null? (int)indexObj :0;
@@ -287,6 +274,10 @@ public class Main2 {
             BlockMapKey value = new BlockMapKey(index, readSize, hashcode);
             blockMap.put(value, readPosition);
 
+            if (readPosition%(1024*1024)==0)
+            {
+                System.out.println("process:"+readPosition/(float)inputLength);
+            }
             readPosition += readSize;
         }
         return blockMap;
@@ -299,7 +290,7 @@ public class Main2 {
      * @param input
      * @return
      */
-    private static int exactMatch(final RandomAccessFile sourceInput, int sourceStart, RandomFileInput input) throws IOException {
+    private static int exactMatch(final MappedByteInput sourceInput, int sourceStart, RandomFileInput input) throws IOException {
         int readSize = 0;
         int sameSize = 0;
         int offStart = 0;

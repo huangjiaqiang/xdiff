@@ -50,13 +50,15 @@ public class Main {
         }
 
 
-        byte[] sourceBytes;
+//        byte[] sourceBytes;
         Input input;
-        try {
-            sourceBytes = Files.readAllBytes(sourceFile.toPath());
-//            InputStream inputStream = new FileInputStream(targetFile);
-//            input = new Input(inputStream);
 
+        MappedByteInput sourceInput;
+
+        try {
+//            sourceBytes = Files.readAllBytes(sourceFile.toPath());
+
+            sourceInput = new MappedByteInput(sourceFile.getAbsolutePath());
             input = new Input(new FileInputStream(patchFile));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -86,7 +88,9 @@ public class Main {
             {
                 long start = input.readLong(true);
                 long blockSize = input.readLong(true);
-                outputBytes = Arrays.copyOfRange(sourceBytes, (int)start, (int)(blockSize+start));
+                outputBytes = new byte[(int)blockSize];
+                sourceInput.read(outputBytes, (int)start);
+//                outputBytes = Arrays.copyOfRange(sourceBytes, (int)start, (int)(blockSize+start));
             }
             blockNum++;
 
@@ -96,6 +100,7 @@ public class Main {
         System.out.println("block nums:"+blockNum);
 
         output.flush();
+        sourceInput.close();
 
     }
 
