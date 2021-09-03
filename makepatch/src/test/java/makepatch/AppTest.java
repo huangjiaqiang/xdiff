@@ -6,8 +6,10 @@ package makepatch;
 import com.melody.makepatch.Main;
 import com.melody.makepatch.Main1;
 import com.melody.makepatch.Main2;
+import com.melody.makepatch.bean.BlockMapKey;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,8 +30,9 @@ public class AppTest {
         String[] args = new String[3];
 //        args[1] = "../assets/pdf/source.pdf";
 //        args[2] = "../assets/pdf/target.pdf";
-        args[1] = "../assets/source.apk";
-        args[2] = "../assets/target.apk";
+        String pathFix = "../../";
+        args[1] = pathFix + "../assets/source.apk";
+        args[2] = pathFix + "../assets/target.apk";
 //        args[1] = "../assets/source";
 //        args[2] = "../assets/target";
         Main2.main(args);
@@ -77,5 +80,21 @@ public class AppTest {
             readPosition++;
         }
         System.out.print("compare end:"+readPosition);
+    }
+
+    @Test public void currentpath()
+    {
+
+        System.out.println(new File("/").getAbsolutePath());
+    }
+
+    @Test public void memoryUse()
+    {
+
+        BlockMapKey key = null;
+        long totalMemory = Runtime.getRuntime().totalMemory();
+        key = new BlockMapKey(1,1,1);
+        long increase = Runtime.getRuntime().totalMemory() - totalMemory;
+        InstrumentationAgent.printObjectSize(key);
     }
 }

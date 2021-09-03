@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":baselib"))
     // Use JUnit test framework
     testImplementation("junit:junit:4.12")
+    testImplementation(fileTree("testLib"))
 }
 
 application {
